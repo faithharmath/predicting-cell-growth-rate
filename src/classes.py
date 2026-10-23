@@ -13,7 +13,18 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
 # By default, matplotlib makes math in italics, but we want our units in regular.
 plt.rcParams['mathtext.default'] = 'regular'
-
+plt.rcParams.update({
+    "figure.facecolor": "#1C1C1C",   # Background surrounding the plot
+    "axes.facecolor": "#252525",     # Background inside the plot
+    "axes.edgecolor": "white",       # Plot borders
+    "axes.labelcolor": "white",      # X and Y axis labels
+    "text.color": "white",           # Titles and general text
+    "xtick.color": "white",          # X-axis tick labels
+    "ytick.color": "white",          # Y-axis tick labels
+    "legend.facecolor": "#303030",   # Legend background
+    "legend.edgecolor": "#555555",   # Legend border
+    "savefig.facecolor": "#1C1C1C",  # Saved image background
+})
 
 class CellGrowthModeler:
     """
@@ -28,11 +39,12 @@ class CellGrowthModeler:
     FONTSIZE_XY_LABEL = 14
     FONTSIZE_TICKS = 12
     FONTSIZE_LEGEND = 11
-    COLORS = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
+    COLORS = ["lightblue", "lightpink", "honeydew", "thistle"]
+    ## colours for matplotlib at https://matplotlib.org/stable/gallery/color/named_colors.html
     STR_DM1 = r"$d^{-1}$"
 
     def __init__(self, dataset_path, target_col="Specific Growth Rate [d^-1]",
-                 test_size=0.2, random_state=0, cv=4):
+                 test_size=0.2, random_state=1, cv=4):
         self.dataset_path = dataset_path
         self.target_col = target_col
         self.test_size = test_size
@@ -80,7 +92,7 @@ class CellGrowthModeler:
         # Split data into 80% training/validation and 20% unseen test set
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
             self.x, self.y, test_size=self.test_size, random_state=self.random_state
-        )
+        ) ## self random state is 0
 
         # Export dataset summary statistics and extreme growth conditions
         df_summary = self.df.describe().T.round(4)
@@ -130,7 +142,7 @@ class CellGrowthModeler:
         print()
 
         # Plot Validation Curve (degrees 1 to 4 to clearly show underfitting, optimal, and overfitting)
-        plot_n = min(4, max_degree)
+        plot_n = min(6, max_degree)
         degrees = self.df_cv_poly.loc[:, "param_polynomialfeatures__degree"].to_numpy()
         rmse_train = -self.df_cv_poly.loc[:, "mean_train_score"].to_numpy()
         rmse_valid = -self.df_cv_poly.loc[:, "mean_test_score"].to_numpy()
@@ -257,6 +269,87 @@ class CellGrowthModeler:
         print(df_comp.to_string(index=False))
         print()
 
+        # Plot actual vs predicted growth rates for all models
+        fig, axes = plt.subplots(
+            nrows=2,
+            ncols=3,
+            figsize=(self.FIG_WIDTH * 2.4, self.FIG_HEIGHT * 1.7),
+            dpi=200,
+            layout="constrained"
+        )
+
+        axes_flat = axes.flatten()
+
+        for i, (name, model) in enumerate(models_to_compare):
+            ax = axes_flat[i]
+
+            # Train model using only training data
+            model.fit(self.x_train, self.y_train)
+
+            # Predict growth rates for unseen test data
+            y_pred = model.predict(self.x_test)
+
+            # Calculate test performance
+            rmse = root_mean_squared_error(self.y_test, y_pred)
+            r2 = r2_score(self.y_test, y_pred)
+
+            # Plot actual vs predicted values
+            ax.scatter(
+                self.y_test,
+                y_pred,
+                color=self.COLORS[i % len(self.COLORS)],
+                alpha=0.7,
+                s=30,
+                edgecolors="none"
+            )
+
+            # Set common axis limits for comparison
+            lower = min(self.y_test.min(), y_pred.min())
+            upper = max(self.y_test.max(), y_pred.max())
+            margin = 0.05 * (upper - lower)
+
+            limits = [lower - margin, upper + margin]
+
+            # Ideal prediction line: y_pred = y_actual
+            ax.plot(
+                limits,
+                limits,
+                color="white",
+                linestyle="--",
+                linewidth=1.5,
+                label="Perfect prediction"
+            )
+
+            ax.set_xlim(limits)
+            ax.set_ylim(limits)
+            ax.set_aspect("equal", adjustable="box")
+
+            ax.set_title(name, fontsize=11)
+            ax.set_xlabel("Actual Growth Rate [d$^{-1}$]")
+            ax.set_ylabel("Predicted Growth Rate [d$^{-1}$]")
+
+            # Show model performance in each subplot
+            ax.text(
+                0.05, 0.95,
+                f"RMSE = {rmse:.3f}\n$R^2$ = {r2:.3f}",
+                transform=ax.transAxes,
+                fontsize=10,
+                verticalalignment="top",
+                color="white",
+                bbox=dict(facecolor="#303030", alpha=0.8)
+            )
+
+            ax.grid(True, color="#555555", alpha=0.2)
+
+        # Hide unused sixth subplot
+        axes_flat[5].axis("off")
+
+        fig.savefig(
+            os.path.join("figures", "figure_03_actual_vs_predicted.png")
+        )
+
+        plt.close(fig)
+
     def generate_learning_curves(self):
         """
         Stage 4: Generates learning curves by training GridSearchCV models on
@@ -320,7 +413,7 @@ class CellGrowthModeler:
         ax.legend(ncols=1, fontsize=self.FONTSIZE_LEGEND)
         ax.set_ylim(bottom=0)
 
-        fig.savefig(os.path.join("figures", "figure_03_learning_curve.png"))
+        fig.savefig(os.path.join("figures", "figure_04_learning_curve.png"))
         plt.close(fig)
 
     def interpret_models_and_plot_effects(self):
@@ -410,10 +503,10 @@ class CellGrowthModeler:
             ax.plot(f_vals, model_knn_uni.predict(x_synth), color=self.COLORS[2],
                     linestyle="-.", linewidth=2, label=f"kNN (k={best_k}, uniform)", zorder=2)
 
-            ax.axvline(x=f_min, color="black", linestyle=":", linewidth=1.0, alpha=0.5)
-            ax.axvline(x=f_max, color="black", linestyle=":", linewidth=1.0, alpha=0.5,
+            ax.axvline(x=f_min, color="white", linestyle=":", linewidth=1.0, alpha=0.5)
+            ax.axvline(x=f_max, color="white", linestyle=":", linewidth=1.0, alpha=0.5,
                        label="Training bounds")
-            ax.axhline(y=0, color="black", linewidth=0.5, alpha=0.3, zorder=0)
+            ax.axhline(y=0, color="white", linewidth=0.5, alpha=0.3, zorder=0)
 
             ax.set_xlabel(feat_name, fontsize=self.FONTSIZE_XY_LABEL)
             ax.set_ylabel(f"Specific Growth Rate [{self.STR_DM1}]", fontsize=self.FONTSIZE_XY_LABEL)
@@ -421,5 +514,5 @@ class CellGrowthModeler:
             if j == 0:
                 ax.legend(loc="upper left", fontsize=9)
 
-        fig.savefig(os.path.join("figures", "figure_04_feature_effects.png"))
+        fig.savefig(os.path.join("figures", "figure_05_feature_effects.png"))
         plt.close(fig)
