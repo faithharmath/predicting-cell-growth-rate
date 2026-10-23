@@ -1,0 +1,6 @@
+Model_Architecture,Train_RMSE,Test_RMSE,Train_R2,Test_R2
+"Polynomial (degree=1, Linear)",0.17203,0.1907,0.1215,0.0917
+"Polynomial (degree=2, Optimal)",0.14442,0.15703,0.3809,0.3841
+"Polynomial (degree=3, Higher-Order)",0.13356,0.15313,0.4705,0.4144
+"kNN (k=9, weights=distance)",0.0,0.15873,1.0,0.3707
+"kNN (k=9, weights=uniform)",0.14178,0.16213,0.4032,0.3434

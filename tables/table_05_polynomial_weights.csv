@@ -1,0 +1,16 @@
+Term,Standardized_Weight
+Intercept (Baseline),0.36315
+[Temperature],-0.01985
+[pH],-0.00985
+[Glucose],0.03183
+[Lactate],-0.06147
+[Temperature]^2,-0.02438
+[Temperature] * [pH],-0.01865
+[Temperature] * [Glucose],-0.01111
+[Temperature] * [Lactate],-0.00703
+[pH]^2,-0.0645
+[pH] * [Glucose],-0.00564
+[pH] * [Lactate],0.00515
+[Glucose]^2,-0.00024
+[Glucose] * [Lactate],-0.01941
+[Lactate]^2,0.01115
