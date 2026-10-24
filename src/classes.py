@@ -142,6 +142,28 @@ class CellGrowthModeler:
         print()
 
         # Plot Validation Curve (degrees 1 to 4 to clearly show underfitting, optimal, and overfitting)
+        plot_n = min(4, max_degree)
+        degrees = self.df_cv_poly.loc[:, "param_polynomialfeatures__degree"].to_numpy()
+        rmse_train = -self.df_cv_poly.loc[:, "mean_train_score"].to_numpy()
+        rmse_valid = -self.df_cv_poly.loc[:, "mean_test_score"].to_numpy()
+
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(self.FIG_WIDTH, self.FIG_HEIGHT),
+                               dpi=200, layout="constrained")
+        ax.plot(degrees[:plot_n], rmse_train[:plot_n], label="Train (Poly)",
+                color=self.COLORS[0], linestyle="-", marker="o")
+        ax.plot(degrees[:plot_n], rmse_valid[:plot_n], label="Valid (Poly)",
+                color=self.COLORS[0], linestyle="--", marker="o")
+        ax.set_xlabel("Polynomial Degree", fontsize=self.FONTSIZE_XY_LABEL)
+        ax.set_ylabel(f"Specific Growth Rate RMSE [{self.STR_DM1}]", fontsize=self.FONTSIZE_XY_LABEL)
+        ax.tick_params(axis='both', which='major', labelsize=self.FONTSIZE_TICKS)
+        ax.legend(ncols=1, fontsize=self.FONTSIZE_LEGEND)
+        ax.set_ylim(bottom=0)
+        ax.xaxis.set_major_locator(MultipleLocator(1))
+
+        fig.savefig(os.path.join("figures", "figure_01a_validation_curve_poly.png"))
+        plt.close(fig)
+
+        # Plot Validation Curve (degrees 1 to 6 to extreme overfitting at the higher degrees)
         plot_n = min(6, max_degree)
         degrees = self.df_cv_poly.loc[:, "param_polynomialfeatures__degree"].to_numpy()
         rmse_train = -self.df_cv_poly.loc[:, "mean_train_score"].to_numpy()
@@ -160,7 +182,7 @@ class CellGrowthModeler:
         ax.set_ylim(bottom=0)
         ax.xaxis.set_major_locator(MultipleLocator(1))
 
-        fig.savefig(os.path.join("figures", "figure_01_validation_curve_poly.png"))
+        fig.savefig(os.path.join("figures", "figure_01b_validation_curve_poly.png"))
         plt.close(fig)
 
     def optimize_knn_regression(self, max_k=50):

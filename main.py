@@ -6,7 +6,7 @@ def main():
     # Define path to the 4-factor cell growth dataset
     dataset_path = os.path.join("datasets", "dataset_cell_growth_4factor.csv")
 
-    # Instantiate the modeler class
+    # Make the modeler class
     modeler = CellGrowthModeler(
         dataset_path=dataset_path,
         target_col="Specific Growth Rate [d^-1]",
